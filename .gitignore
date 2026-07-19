@@ -1,0 +1,19 @@
+# CMake build output
+/build/
+
+# CMake local user overrides (machine-specific, never committed)
+CMakeUserPresets.json
+
+# Visual Studio / MSVC local state
+.vs/
+*.obj
+*.pdb
+*.exe
+*.ilk
+*.idb
+*.exp
+*.lib
+
+# VS Code: the shared project config in .vscode/ IS committed on purpose so the
+# build works the same on every machine. Only ignore per-user noise.
+.vscode/*.log
