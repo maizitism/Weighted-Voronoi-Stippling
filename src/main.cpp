@@ -71,7 +71,7 @@ std::vector<float> computeDarknessMap(Image &img){
     for(int y = 0; y < img.height; y++){
         for(int x = 0; x < img.width; x++){
             int index = (img.width * y + x);
-            float luminance = 0.299 * img.pixels[index].r + 0.587 * img.pixels[index].g + 0.114 * img.pixels[index].b;
+            float luminance = 0.299 * img.pixels[index].r + 0.587 * img.pixels[index].g + 0.114 * img.pixels[index].b; // shoutout REC.601
             darkness.push_back((1-luminance/255));
         }
     }
@@ -190,6 +190,34 @@ void relaxPoints(std::vector<jcv_point>& points, std::vector<float>& darkness, i
     }
 }
 
+void drawCircle(Image &canvas, int cx, int cy, int radius, RGBPixel color){
+    // adapted from https://www.mathsisfun.com/algebra/circle-equations.html
+    for(int dy  = -radius; dy <= radius; dy++){
+        for(int dx = -radius; dx <= radius; dx++){
+            if(dx*dx + dy*dy <= radius*radius){
+                int px = cx + dx;
+                int py = cy + dy;
+                if(px >= 0 && px < canvas.width && py >= 0 && py < canvas.height){
+                    canvas.pixels[py * canvas.width + px] = color;
+                }
+            }
+        }
+    }
+}
+
+
+Image renderStipples(std::vector<jcv_point> &points, int width, int height){
+    Image canvas;
+    canvas.width = width;
+    canvas.height = height;
+    canvas.pixels.assign(static_cast<size_t>(width * height), RGBPixel{255, 255, 255});
+    for(const jcv_point &p : points){
+        int px = static_cast<int>(std::round(p.x));
+        int py = static_cast<int>(std::round(p.y));
+        
+    }
+}
+
 int main(int argc, char *argv[])
 {   
     if(argc < 2){
@@ -210,6 +238,7 @@ int main(int argc, char *argv[])
     std::vector<float> densityMap = computeDarknessMap(img);
     std::vector<Positions> points = seedPoints(densityMap, img);
     std::vector<jcv_point> packedPoints = packPoints(points);
+    relaxPoints(packedPoints, densityMap, img.width, img.height, 40);
 
 
     return 0;
