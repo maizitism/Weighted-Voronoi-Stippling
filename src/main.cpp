@@ -55,6 +55,7 @@ Image openImage(std::string& fileName){
         }
     }
     stbi_image_free(imageData);
+    printf("Image %s loaded.\n", fileName);
     return image;
 }
 
@@ -63,11 +64,13 @@ void writeImage(std::string fileName, Image &img){
         printf("Image failed to save.\n");
         return;
     }
+    printf("Image loaded.\n");
 }
 
 std::vector<float> computeDarknessMap(Image &img){
     std::vector<float> darkness;
     darkness.reserve(img.height * img.width);
+    printf("Computing darkness map...\n");
     for(int y = 0; y < img.height; y++){
         for(int x = 0; x < img.width; x++){
             int index = (img.width * y + x);
@@ -92,7 +95,7 @@ std::vector<Positions> seedPoints(std::vector<float> &density, Image &img){
     std::uniform_real_distribution<float> tDist(0.0f, 1.0f);
     std::vector<Positions> seededPoints;
     seededPoints.reserve(N);
-
+    printf("Seeding %d points... \n", N);
     while(N != 0){
         int x = distX(gen);
         int y = distY(gen);
@@ -113,6 +116,7 @@ std::vector<Positions> seedPoints(std::vector<float> &density, Image &img){
 std::vector<jcv_point> packPoints(std::vector<Positions> &positions){
     std::vector<jcv_point> points;
     points.reserve(positions.size());
+    printf("Packing points...\n");
     for(Positions &p : positions){
         points.push_back({static_cast<jcv_real>(p.x), static_cast<jcv_real>(p.y)});
     }
@@ -128,6 +132,7 @@ void relaxPoints(std::vector<jcv_point>& points, std::vector<float>& darkness, i
     rect.min = {0.0f, 0.0f};
     rect.max = {static_cast<jcv_real>(width - 1), static_cast<jcv_real>(height - 1)};
     for(int iter = 0; iter < iterations; iter++){
+        printf("Performing Lloyd relaxation iteration %d...\n", iter);
         jcv_diagram diagram{};
         jcv_diagram_generate(static_cast<int>(points.size()), points.data(), &rect, nullptr, &diagram);
 
@@ -216,12 +221,13 @@ Image renderStipples(std::vector<jcv_point> &points, std::vector<float> densityM
     canvas.width = width;
     canvas.height = height;
     canvas.pixels.assign(static_cast<size_t>(width * height), RGBPixel{255, 255, 255});
+    printf("Rendering stippled image...\n");
     for(const jcv_point &p : points){
         int px = static_cast<int>(std::round(p.x));
         int py = static_cast<int>(std::round(p.y));
         if(px < 0 || px >= width || py < 0 || py >= height) continue;
         float d = densityMap[py * width + px];
-        int r = darknessToRadius(d, 1, 20);
+        int r = darknessToRadius(d, 1, 3);
         drawCircle(canvas, px, py, r, RGBPixel{0, 0, 0});
     }
     return canvas;
