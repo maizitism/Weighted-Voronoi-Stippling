@@ -31,6 +31,10 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
 add_executable(stippling ${SOURCES})
 target_include_directories(stippling PRIVATE src)
 
+# Header-only third-party libraries (stb_image, stb_image_write) live in lib/.
+# SYSTEM marks them as system headers so their warnings stay out of your /W4 build.
+target_include_directories(stippling SYSTEM PRIVATE lib)
+
 # ---- Compiler options -------------------------------------------------------
 if(MSVC)
     # /W4 high warnings, /EHsc standard C++ exceptions.
