@@ -55,7 +55,7 @@ Image openImage(std::string& fileName){
         }
     }
     stbi_image_free(imageData);
-    printf("Image %s loaded.\n", fileName);
+    printf("Image loaded.\n");
     return image;
 }
 
@@ -64,7 +64,7 @@ void writeImage(std::string fileName, Image &img){
         printf("Image failed to save.\n");
         return;
     }
-    printf("Image loaded.\n");
+    printf("Image written.\n");
 }
 
 std::vector<float> computeDarknessMap(Image &img){
@@ -239,14 +239,8 @@ int main(int argc, char *argv[])
         print_usage();
         return 1;
     }
-    std::string fileName = argv[1];
-    if(!fileName.ends_with(".bmp")){
-        printf("Given file is not a .BMP file. Refer to usage.");
-        print_usage();
-        return 1;
-    }
-    
-    printf("Entered %d variables, the one we care about is %s", argc, argv[1]);
+    std::string fileName = argv[1];  
+    printf("Entered %d variables, the one we care about is %s\n", argc, argv[1]);
 
     // open file, close file and save as different one
     Image img = openImage(fileName);
