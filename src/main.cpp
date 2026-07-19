@@ -84,11 +84,11 @@ struct Position{
 
 std::vector<Position> seedPoints(std::vector<float> &density, Image &img){
     int N = 10000; // how many points to seed
-    float threshold = 0.6f;
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_int_distribution<int> distX(0, img.width  - 1);
     std::uniform_int_distribution<int> distY(0, img.height - 1);
+    std::uniform_real_distribution<float> tDist(0.0f, 1.0f);
     std::vector<Position> seededPoints;
     seededPoints.reserve(N);
 
@@ -97,7 +97,7 @@ std::vector<Position> seedPoints(std::vector<float> &density, Image &img){
         int y = distY(gen);
         int index = (img.width * y + x);
         float darkness = density.data()[index];
-        if (darkness > threshold){
+        if (darkness > tDist(gen)){
             Position pos = {
                 x, 
                 y
