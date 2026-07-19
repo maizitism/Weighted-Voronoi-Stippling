@@ -221,9 +221,10 @@ Image renderStipples(std::vector<jcv_point> &points, std::vector<float> densityM
         int py = static_cast<int>(std::round(p.y));
         if(px < 0 || px >= width || py < 0 || py >= height) continue;
         float d = densityMap[py * width + px];
-        int r = darknessToRadius(d, 1, 3);
+        int r = darknessToRadius(d, 1, 20);
         drawCircle(canvas, px, py, r, RGBPixel{0, 0, 0});
     }
+    return canvas;
 }
 
 int main(int argc, char *argv[])
@@ -248,6 +249,8 @@ int main(int argc, char *argv[])
     std::vector<jcv_point> packedPoints = packPoints(points);
     relaxPoints(packedPoints, densityMap, img.width, img.height, 40);
 
+    Image stipples = renderStipples(packedPoints, densityMap, img.width, img.height);
+    writeImage("src/stipples.bmp", stipples);
 
     return 0;
 }
