@@ -5,7 +5,11 @@
 #include "stb_image.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
+#define JC_VORONOI_IMPLEMENTATION
+#include "jc_voronoi.h"
 #include <vector>
+#include <random>
+#include <algorithm>
 
 struct RGBPixel{
     uint8_t r;
@@ -60,6 +64,48 @@ void writeImage(std::string fileName, Image &img){
     }
 }
 
+std::vector<float> computeDarknessMap(Image &img){
+    std::vector<float> darkness;
+    darkness.reserve(img.height * img.width);
+    for(int y = 0; y < img.height; y++){
+        for(int x = 0; x < img.width; x++){
+            int index = (img.width * y + x);
+            float luminance = 0.299 * img.pixels[index].r + 0.587 * img.pixels[index].g + 0.114 * img.pixels[index].b;
+            darkness.push_back((1-luminance/255));
+        }
+    }
+    return darkness;
+}
+
+struct Position{
+    unsigned int x;
+    unsigned int y;
+};
+
+std::vector<Position> seedPoints(std::vector<float> &density, Image &img){
+    int N = 10000; // how many points to seed
+    float threshold = 0.6f;
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::vector<Position> seededPoints;
+    seededPoints.reserve(N);
+
+    while(N != 0){
+        unsigned int x = std::clamp(gen(), 0u, static_cast<unsigned int>(img.width));
+        unsigned int y = std::clamp(gen(), 0u, static_cast<unsigned int>(img.height));
+        int index = (img.width * y + x);
+        float darkness = density.data()[index];
+        if (darkness > threshold){
+            Position pos = {
+                x, 
+                y
+            };
+            seededPoints.push_back(pos);
+            N--;
+        }
+    }
+    return seededPoints;
+}
 
 int main(int argc, char *argv[])
 {   
