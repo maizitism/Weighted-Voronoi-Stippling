@@ -14,6 +14,9 @@ CMakeUserPresets.json
 *.exp
 *.lib
 
+# Personal files (so that the image does not get pushed to the repo, must be user specified)
+*.bmp
+
 # VS Code: the shared project config in .vscode/ IS committed on purpose so the
 # build works the same on every machine. Only ignore per-user noise.
 .vscode/*.log
