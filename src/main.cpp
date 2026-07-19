@@ -78,8 +78,8 @@ std::vector<float> computeDarknessMap(Image &img){
 }
 
 struct Position{
-    unsigned int x;
-    unsigned int y;
+    int x;
+    int y;
 };
 
 std::vector<Position> seedPoints(std::vector<float> &density, Image &img){
@@ -87,12 +87,14 @@ std::vector<Position> seedPoints(std::vector<float> &density, Image &img){
     float threshold = 0.6f;
     std::random_device rd;
     std::mt19937 gen(rd());
+    std::uniform_int_distribution<int> distX(0, img.width  - 1);
+    std::uniform_int_distribution<int> distY(0, img.height - 1);
     std::vector<Position> seededPoints;
     seededPoints.reserve(N);
 
     while(N != 0){
-        unsigned int x = std::clamp(gen(), 0u, static_cast<unsigned int>(img.width));
-        unsigned int y = std::clamp(gen(), 0u, static_cast<unsigned int>(img.height));
+        int x = distX(gen);
+        int y = distY(gen);
         int index = (img.width * y + x);
         float darkness = density.data()[index];
         if (darkness > threshold){
