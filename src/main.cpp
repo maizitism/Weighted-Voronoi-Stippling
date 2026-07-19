@@ -109,6 +109,15 @@ std::vector<Position> seedPoints(std::vector<float> &density, Image &img){
     return seededPoints;
 }
 
+std::vector<jcv_point> packPoints(std::vector<Position> &positions){
+    std::vector<jcv_point> points;
+    points.reserve(positions.size());
+    for(Position &p : positions){
+        points.push_back({static_cast<jcv_real>(p.x), static_cast<jcv_real>(p.y)});
+    }
+    return points;
+}
+
 int main(int argc, char *argv[])
 {   
     if(argc < 2){
