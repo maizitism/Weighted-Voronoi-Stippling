@@ -207,7 +207,7 @@ void drawCircle(Image &canvas, int cx, int cy, int radius, RGBPixel color){
 
 int darknessToRadius(float darkness, int minR, int maxR){
     darkness = std::clamp(darkness, 0.0f, 1.0f);
-    return minR + static_cast<int>(std::round(std::sqrt(darkness) - (maxR - minR))); // lerp
+    return minR + static_cast<int>(std::round(std::sqrt(darkness) * (maxR - minR))); // lerp
     // darkness scales with r^2 (because circle), so sqrt(darkness)
 }
 
