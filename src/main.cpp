@@ -205,8 +205,13 @@ void drawCircle(Image &canvas, int cx, int cy, int radius, RGBPixel color){
     }
 }
 
+int darknessToRadius(float darkness, int minR, int maxR){
+    darkness = std::clamp(darkness, 0.0f, 1.0f);
+    return minR + static_cast<int>(std::round(std::sqrt(darkness) - (maxR - minR))); // lerp
+    // darkness scales with r^2 (because circle), so sqrt(darkness)
+}
 
-Image renderStipples(std::vector<jcv_point> &points, int width, int height){
+Image renderStipples(std::vector<jcv_point> &points, std::vector<float> densityMap, int width, int height){
     Image canvas;
     canvas.width = width;
     canvas.height = height;
@@ -214,7 +219,10 @@ Image renderStipples(std::vector<jcv_point> &points, int width, int height){
     for(const jcv_point &p : points){
         int px = static_cast<int>(std::round(p.x));
         int py = static_cast<int>(std::round(p.y));
-        
+        if(px < 0 || px >= width || py < 0 || py >= height) continue;
+        float d = densityMap[py * width + px];
+        int r = darknessToRadius(d, 1, 3);
+        drawCircle(canvas, px, py, r, RGBPixel{0, 0, 0});
     }
 }
 
