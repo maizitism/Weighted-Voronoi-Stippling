@@ -10,6 +10,7 @@
 #include <vector>
 #include <random>
 #include <algorithm>
+#include <cmath>
 
 struct RGBPixel{
     uint8_t r;
@@ -77,19 +78,19 @@ std::vector<float> computeDarknessMap(Image &img){
     return darkness;
 }
 
-struct Position{
+struct Positions{
     int x;
     int y;
 };
 
-std::vector<Position> seedPoints(std::vector<float> &density, Image &img){
+std::vector<Positions> seedPoints(std::vector<float> &density, Image &img){
     int N = 10000; // how many points to seed
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_int_distribution<int> distX(0, img.width  - 1);
     std::uniform_int_distribution<int> distY(0, img.height - 1);
     std::uniform_real_distribution<float> tDist(0.0f, 1.0f);
-    std::vector<Position> seededPoints;
+    std::vector<Positions> seededPoints;
     seededPoints.reserve(N);
 
     while(N != 0){
@@ -98,7 +99,7 @@ std::vector<Position> seedPoints(std::vector<float> &density, Image &img){
         int index = (img.width * y + x);
         float darkness = density.data()[index];
         if (darkness > tDist(gen)){
-            Position pos = {
+            Positions pos = {
                 x, 
                 y
             };
@@ -109,13 +110,84 @@ std::vector<Position> seedPoints(std::vector<float> &density, Image &img){
     return seededPoints;
 }
 
-std::vector<jcv_point> packPoints(std::vector<Position> &positions){
+std::vector<jcv_point> packPoints(std::vector<Positions> &positions){
     std::vector<jcv_point> points;
     points.reserve(positions.size());
-    for(Position &p : positions){
+    for(Positions &p : positions){
         points.push_back({static_cast<jcv_real>(p.x), static_cast<jcv_real>(p.y)});
     }
     return points;
+}
+
+float edge(jcv_point a, jcv_point b, jcv_point c) {
+    return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+}
+
+void relaxPoints(std::vector<jcv_point>& points, std::vector<float>& darkness, int width, int height, int iterations){
+    jcv_rect rect;
+    rect.min = {0.0f, 0.0f};
+    rect.max = {static_cast<jcv_real>(width - 1), static_cast<jcv_real>(height - 1)};
+    for(int iter = 0; iter < iterations; iter++){
+        jcv_diagram diagram{};
+        jcv_diagram_generate(static_cast<int>(points.size()), points.data(), &rect, nullptr, &diagram);
+
+        int N = points.size();
+        std::vector<double> sumW (N, 0.0);
+        std::vector<double> sumWX (N, 0.0);   
+        std::vector<double> sumWY (N, 0.0);
+        
+        const jcv_site *sites = jcv_diagram_get_sites(&diagram);
+        for(int i = 0; i < diagram.numsites; i++){ // each cell
+            const jcv_site *site = &sites[i];
+            jcv_point C = site->p; // get center point
+            int idx = site->index; // get location which maps back into packedPoints array
+
+            const jcv_graphedge *e = site->edges;
+            while (e != nullptr){ // each edge
+                jcv_point A = e->pos[0];
+                jcv_point B = e->pos[1];
+
+                // discombobulate. (rasterise)
+
+                // Adapted from - https://stackoverflow.com/a/9070812, Posted by templatetypedef
+                // make bounding box from ABC
+                float minX = std::min({C.x, A.x, B.x});
+                float maxX = std::max({C.x, A.x, B.x});
+                float minY = std::min({C.y, A.y, B.y});
+                float maxY = std::max({C.y, A.y, B.y});
+                // this gives float values - normalise to whole image so we can iterate over pixels
+                int x0 = std::max(0, static_cast<int>(std::floor(minX)));
+                int x1 = std::min(width - 1, static_cast<int>(std::floor(maxX)));
+                int y0 = std::max(0, static_cast<int>(std::floor(minY)));
+                int y1 = std::min(height - 1, static_cast<int>(std::floor(maxY)));
+                
+                // iterate over computed BB
+                for(int y = y0; y <= y1; y++){
+                    for(int x = x0; x <= x1; x++){
+                        // check if pixel is inside triangle
+                        // jvc_point is really just a {float, float}
+                        float d0 = edge(A, B, {static_cast<float>(x), static_cast<float>(y)});
+                        float d1 = edge(B, C, {static_cast<float>(x), static_cast<float>(y)});
+                        float d2 = edge(C, A, {static_cast<float>(x), static_cast<float>(y)});
+                        bool inside = (d0 >= 0 && d1 >= 0 && d2 >= 0) || (d0 <= 0 && d1 <= 0 && d2 <= 0);
+                        if (inside){
+                            float w = darkness[y * width + x];
+                            sumW[idx] += w;
+                            sumWX[idx] += w * x;
+                            sumWY[idx] += w * y;
+                        }
+                    }
+                }
+                e = e->next;
+            }
+            if(sumW[idx] > 0.0){
+                points[idx].x = static_cast<jcv_real>(sumWX[idx] / sumW[idx]);
+                points[idx].y = static_cast<jcv_real>(sumWY[idx] / sumW[idx]);
+            }
+            
+        }
+        jcv_diagram_free(&diagram);
+    }
 }
 
 int main(int argc, char *argv[])
@@ -135,7 +207,10 @@ int main(int argc, char *argv[])
 
     // open file, close file and save as different one
     Image img = openImage(fileName);
-    writeImage("src/written_image.bmp", img);
+    std::vector<float> densityMap = computeDarknessMap(img);
+    std::vector<Positions> points = seedPoints(densityMap, img);
+    std::vector<jcv_point> packedPoints = packPoints(points);
+
 
     return 0;
 }
