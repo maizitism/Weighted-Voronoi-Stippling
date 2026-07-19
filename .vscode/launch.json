@@ -6,7 +6,7 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}\\build\\Debug\\stippling.exe",
-            "args": [],
+            "args": ["src/test_picture.bmp"],
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
             "preLaunchTask": "CMake: build (Debug)"
