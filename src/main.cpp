@@ -7,6 +7,7 @@
 #include "stb_image_write.h"
 #define JC_VORONOI_IMPLEMENTATION
 #include "jc_voronoi.h"
+#include "CLI11.hpp"
 #include <vector>
 #include <random>
 #include <algorithm>
@@ -23,10 +24,6 @@ struct Image {
     int height = 0;
     std::vector<RGBPixel> pixels;
 };
-
-void print_usage(){
-    printf("Usage: [.bmp image file location] \n");
-}
 
 Image openImage(std::string& fileName){
     int width, height, channels;
@@ -235,15 +232,19 @@ Image renderStipples(std::vector<jcv_point> &points, std::vector<float> densityM
 
 int main(int argc, char *argv[])
 {   
-    if(argc < 2){
-        print_usage();
-        return 1;
+    printf("%d\n", argc);
+    for(int i=0; i<argc; i++){
+        printf("%s\n", argv[i]);
     }
-    std::string fileName = argv[1];  
-    printf("Entered %d variables, the one we care about is %s\n", argc, argv[1]);
+
+    CLI::App app{"Weighted Voronoi Stippling by Marks Janis Maizitis as BUas programming homework (Y1Q0)"};
+    std::string inputFN, outputFN;
+    app.add_option("--i", inputFN, "Input file")->required();
+    app.add_option("--o", outputFN, "Output file")->required();
+    CLI11_PARSE(app, argc, argv);  
 
     // open file, close file and save as different one
-    Image img = openImage(fileName);
+    Image img = openImage(inputFN);
     std::vector<float> densityMap = computeDarknessMap(img);
     std::vector<Positions> points = seedPoints(densityMap, img);
     std::vector<jcv_point> packedPoints = packPoints(points);
