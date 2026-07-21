@@ -21,39 +21,6 @@ void writeImage(std::string &fileName, Image &img){
     printf("Image written.\n");
 }
 
-
-struct Positions{
-    int x;
-    int y;
-};
-
-std::vector<Positions> seedPoints(std::vector<float> &density, Image &img){
-    int N = 10000; // how many points to seed
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<int> distX(0, img.width  - 1);
-    std::uniform_int_distribution<int> distY(0, img.height - 1);
-    std::uniform_real_distribution<float> tDist(0.0f, 1.0f);
-    std::vector<Positions> seededPoints;
-    seededPoints.reserve(N);
-    printf("Seeding %d points... \n", N);
-    while(N != 0){
-        int x = distX(gen);
-        int y = distY(gen);
-        int index = img.width * y + x;
-        float darkness = density[index];
-        if (darkness > tDist(gen)){
-            Positions pos = {
-                x, 
-                y
-            };
-            seededPoints.push_back(pos);
-            N--;
-        }
-    }
-    return seededPoints;
-}
-
 std::vector<jcv_point> packPoints(std::vector<Positions> &positions){
     std::vector<jcv_point> points;
     points.reserve(positions.size());
@@ -166,30 +133,30 @@ int main(int argc, char *argv[])
 {
     CLI::App app{"Weighted Voronoi Stippling by Marks Janis Maizitis as BUas programming homework (Y1Q0)"};
     std::string inputFN, outputFN;
-    int iterations;
+    int iterations, N;
     app.add_option("--i, -i", inputFN, "Input file")->required();
     app.add_option("--o, -o", outputFN, "Output file")->required();
     app.add_option("--iter, -iter", iterations, "Number of Lloyd relaxation iterations to perform")->required();
+    app.add_option("--n, -n", N, "Number of points to seed")->required();
     CLI11_PARSE(app, argc, argv);
 
     int W, H; uint8_t* imageData = stbi_load(inputFN.c_str(), &W, &H, nullptr, 3); // force RGB output
     if(!imageData){printf("Image loading failed.\n");return 1;}
     std::vector<float>densityMap(W*H);
     for (int i = 0; i< W*H; i++){ densityMap[i] = 1.f - (0.299f*imageData[i*3]+0.587f*imageData[i*3+1]+0.114f*imageData[i*3+2])/255.f; }
-
-
     stbi_image_free(imageData);
 
+    std::mt19937 gen(std::random_device{}());
+    std::uniform_int_distribution<int> distX(0, W - 1), distY(0, H - 1);
+    std::uniform_real_distribution<float> tDistrib(0.0f, 1.0f);
+    std::vector<jcv_point> seededPoints(N);
+    for (; N>0; N--){double x = distX(gen), y = distY(gen);  if (densityMap[W * y + x] > tDistrib(gen)) {seededPoints.push_back({x,y});}}
 
 
-
-
-    //std::vector<float> densityMap = computeDarknessMap(img);
-    std::vector<Positions> points = seedPoints(densityMap, img);
     std::vector<jcv_point> packedPoints = packPoints(points);
     relaxPoints(packedPoints, densityMap, img.width, img.height, iterations);
     Image stipples = renderStipples(packedPoints, densityMap, img.width, img.height);
     writeImage(outputFN, stipples);
 
     return 0;
-}
+}x
