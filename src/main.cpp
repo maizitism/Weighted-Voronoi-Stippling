@@ -238,19 +238,22 @@ int main(int argc, char *argv[])
 
     CLI::App app{"Weighted Voronoi Stippling by Marks Janis Maizitis as BUas programming homework (Y1Q0)"};
     std::string inputFN, outputFN;
+    int iterations;
     app.add_option("--i, -i", inputFN, "Input file")->required();
     app.add_option("--o, -o", outputFN, "Output file")->required();
+    app.add_option("--iter, -iter", iterations, "Number of Lloyd relaxation iterations to perform")->required();
     CLI11_PARSE(app, argc, argv);  
+
 
     // open file, close file and save as different one
     Image img = openImage(inputFN);
-    if (img.height == 0) {
+    if (img.height == 0 || img.width == 0) {
         return 1;
     }
     std::vector<float> densityMap = computeDarknessMap(img);
     std::vector<Positions> points = seedPoints(densityMap, img);
     std::vector<jcv_point> packedPoints = packPoints(points);
-    relaxPoints(packedPoints, densityMap, img.width, img.height, 40);
+    relaxPoints(packedPoints, densityMap, img.width, img.height, iterations);
 
     Image stipples = renderStipples(packedPoints, densityMap, img.width, img.height);
     writeImage(outputFN, stipples);
