@@ -18,6 +18,10 @@ CMakeUserPresets.json
 *.bmp
 *.jpg
 
+# ...except the sample images used in the README, which are intentionally committed
+!samples/*.jpg
+!samples/*.png
+
 # CLion / JetBrains: the shared IDE config lives in CMakePresets.json and the
 # committed .run/ run configurations. The .idea/ folder is per-user machine
 # state (it regenerates on open), so it is not committed.
@@ -25,7 +29,3 @@ CMakeUserPresets.json
 
 # CLion build trees for any non-preset CMake profiles.
 cmake-build-*/
-
-# Un-ignore sample images
-!/samples/testImage.jpeg
-!/samples/stippled.bmp
