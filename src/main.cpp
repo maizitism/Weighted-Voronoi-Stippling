@@ -23,20 +23,6 @@ void writeImage(std::string &fileName, Image &img){
 
 double edge(jcv_point a, jcv_point b, jcv_point c) {return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);}
 
-void drawCircle(Image &canvas, int cx, int cy, int radius, RGBPixel color){
-    for(int dy  = -radius; dy <= radius; dy++){
-        for(int dx = -radius; dx <= radius; dx++){
-            if(dx*dx + dy*dy <= radius*radius){
-                int px = cx + dx;
-                int py = cy + dy;
-                if(px >= 0 && px < canvas.width && py >= 0 && py < canvas.height){
-                    canvas.pixels[py * canvas.width + px] = color;
-                }
-            }
-        }
-    }
-}
-
 int main(int argc, char *argv[])
 {
     CLI::App app{"Weighted Voronoi Stippling by Marks Janis Maizitis as BUas programming homework (Y1Q0)"};
@@ -78,14 +64,14 @@ int main(int argc, char *argv[])
                 if(sumW[idx] > 0.0){points[idx].x = (sumWX[idx] / sumW[idx]); points[idx].y = (sumWY[idx] / sumW[idx]);} } jcv_diagram_free(&diagram); }
     }
     std::vector<uint8_t> img(W*H*3, 255);
-    for(const jcv_point &p : points){int px = static_cast<int>(std::round(p.x)); int py = static_cast<int>(std::round(p.y));
-        if(px < 0 || px >= W || py < 0 || py >= H) continue;
-        int r = 1 + static_cast<int>(std::round(std::sqrt(std::clamp(densityMap[px * W + py], 0.f, 1.f)) * 9));
-
-        drawCircle(canvas, px, py, r, RGBPixel{0, 0, 0});
+    for(const jcv_point &p : points){int cx = static_cast<int>(std::round(p.x)); int cy = static_cast<int>(std::round(p.y));
+        if(cx < 0 || cx >= W || cy < 0 || cy >= H) continue;
+        int r = 1 + static_cast<int>(std::round(std::sqrt(std::clamp(densityMap[cx * W + cy], 0.f, 1.f)) * 9));
+        for(int dy = -r; dy <= r; dy++) for(int dx = -r; dx <= r; dx++) if(dx*dx + dy*dy <= r*r){
+                    int px = cx + dx, py = cy + dy;
+                    if(px >= 0 && px < W && py >= 0 && py < H){ int o = (py * W + px); img[o] = img[o+1] = img[o+2] = 0}
+                }
     }
-    return canvas;
-
     writeImage(outputFN, stipples);
 
     return 0;
