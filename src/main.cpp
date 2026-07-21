@@ -21,19 +21,6 @@ void writeImage(std::string &fileName, Image &img){
     printf("Image written.\n");
 }
 
-std::vector<float> computeDarknessMap(Image &img){
-    std::vector<float> darkness;
-    darkness.reserve(img.height * img.width);
-    printf("Computing darkness map...\n");
-    for(int y = 0; y < img.height; y++){
-        for(int x = 0; x < img.width; x++){
-            int index = (img.width * y + x);
-            float luminance = 0.299 * img.pixels[index].r + 0.587 * img.pixels[index].g + 0.114 * img.pixels[index].b; // shoutout REC.601
-            darkness.push_back((1-luminance/255));
-        }
-    }
-    return darkness;
-}
 
 struct Positions{
     int x;
@@ -187,6 +174,9 @@ int main(int argc, char *argv[])
 
     int W, H; uint8_t* imageData = stbi_load(inputFN.c_str(), &W, &H, nullptr, 3); // force RGB output
     if(!imageData){printf("Image loading failed.\n");return 1;}
+    std::vector<float>densityMap(W*H);
+    for (int i = 0; i< W*H; i++){ densityMap[i] = 1.f - (0.299f*imageData[i*3]+0.587f*imageData[i*3+1]+0.114f*imageData[i*3+2])/255.f; }
+
 
     stbi_image_free(imageData);
 
@@ -194,7 +184,7 @@ int main(int argc, char *argv[])
 
 
 
-    std::vector<float> densityMap = computeDarknessMap(img);
+    //std::vector<float> densityMap = computeDarknessMap(img);
     std::vector<Positions> points = seedPoints(densityMap, img);
     std::vector<jcv_point> packedPoints = packPoints(points);
     relaxPoints(packedPoints, densityMap, img.width, img.height, iterations);
