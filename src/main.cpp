@@ -31,8 +31,8 @@ int main(int argc, char *argv[]){
     std::mt19937 gen(std::random_device{}());
     std::uniform_int_distribution<int> distX(0, W - 1), distY(0, H - 1);
     std::uniform_real_distribution<float> tDistrib(0.0f, 1.0f);
-    std::vector<jcv_point> points(N);
-    for (; N>0; N--){double x = distX(gen), y = distY(gen);  if (densityMap[W * y + x] > tDistrib(gen)) {points.push_back({x,y});}}
+    std::vector<jcv_point> points; points.reserve(N);
+    while (static_cast<int>(points.size()) < N){double x = distX(gen), y = distY(gen);  if (densityMap[W * y + x] > tDistrib(gen)) {points.push_back({x,y});}}
     jcv_rect rect {0.0f, 0.0f, static_cast<jcv_real>(W)-1, static_cast<jcv_real>(H)-1};
     for(int it = 0; it < iterations; it++) {
         printf("Performing Lloyd relaxation iteration %d...\n", it); jcv_diagram diagram{}; jcv_diagram_generate(static_cast<int>(points.size()), points.data(), &rect, nullptr, &diagram);
@@ -48,15 +48,18 @@ int main(int argc, char *argv[]){
                     double d0 = edge(A, B, {(x),(y)}), d1 = edge(B, C, {(x), (y)}), d2 = edge(C, A, {(x), (y)});
                     if ((d0 >= 0 && d1 >= 0 && d2 >= 0) || (d0 <= 0 && d1 <= 0 && d2 <= 0)){ sumW[idx] += densityMap[y * W + x]; sumWX[idx] += densityMap[y * W + x] * x; sumWY[idx] += densityMap[y * W + x] * y; }
                 }
-                if(sumW[idx] > 0.0){points[idx].x = (sumWX[idx] / sumW[idx]); points[idx].y = (sumWY[idx] / sumW[idx]);} } jcv_diagram_free(&diagram); }
+            }
+            if(sumW[idx] > 0.0){points[idx].x = (sumWX[idx] / sumW[idx]); points[idx].y = (sumWY[idx] / sumW[idx]);}
+        }
+        jcv_diagram_free(&diagram);
     }
     std::vector<uint8_t> img(W*H*3, 255);
     for(const jcv_point &p : points){int cx = static_cast<int>(std::round(p.x)); int cy = static_cast<int>(std::round(p.y));
         if(cx < 0 || cx >= W || cy < 0 || cy >= H) continue;
-        int r = 1 + static_cast<int>(std::round(std::sqrt(std::clamp(densityMap[cx * W + cy], 0.f, 1.f)) * 9));
+        int r = 1 + static_cast<int>(std::round(std::sqrt(std::clamp(densityMap[cy * W + cx], 0.f, 1.f)) * 9));
         for(int dy = -r; dy <= r; dy++) for(int dx = -r; dx <= r; dx++) if(dx*dx + dy*dy <= r*r){
                     int px = cx + dx, py = cy + dy;
-                    if(px >= 0 && px < W && py >= 0 && py < H){ int o = (py * W + px); img[o] = img[o+1] = img[o+2] = 0;}
+                    if(px >= 0 && px < W && py >= 0 && py < H){ int o = ((py*W+px)*3); img[o] = img[o+1] = img[o+2] = 0;}
         }
     }
     printf(stbi_write_bmp(outputFN.c_str(),W,H,3,img.data()) ? "Image written.\n" : "Image failed to save.\n");
