@@ -21,16 +21,6 @@ void writeImage(std::string &fileName, Image &img){
     printf("Image written.\n");
 }
 
-std::vector<jcv_point> packPoints(std::vector<Positions> &positions){
-    std::vector<jcv_point> points;
-    points.reserve(positions.size());
-    printf("Packing points...\n");
-    for(Positions &p : positions){
-        points.push_back({static_cast<jcv_real>(p.x), static_cast<jcv_real>(p.y)});
-    }
-    return points;
-}
-
 double edge(jcv_point a, jcv_point b, jcv_point c) {
     return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
 }
@@ -149,11 +139,9 @@ int main(int argc, char *argv[])
     std::mt19937 gen(std::random_device{}());
     std::uniform_int_distribution<int> distX(0, W - 1), distY(0, H - 1);
     std::uniform_real_distribution<float> tDistrib(0.0f, 1.0f);
-    std::vector<jcv_point> seededPoints(N);
-    for (; N>0; N--){double x = distX(gen), y = distY(gen);  if (densityMap[W * y + x] > tDistrib(gen)) {seededPoints.push_back({x,y});}}
+    std::vector<jcv_point> points(N);
+    for (; N>0; N--){double x = distX(gen), y = distY(gen);  if (densityMap[W * y + x] > tDistrib(gen)) {points.push_back({x,y});}}
 
-
-    std::vector<jcv_point> packedPoints = packPoints(points);
     relaxPoints(packedPoints, densityMap, img.width, img.height, iterations);
     Image stipples = renderStipples(packedPoints, densityMap, img.width, img.height);
     writeImage(outputFN, stipples);
