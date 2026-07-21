@@ -12,46 +12,6 @@
 #include <algorithm>
 #include <cmath>
 
-struct RGBPixel{
-    uint8_t r;
-    uint8_t g;
-    uint8_t b;
-};
-
-struct Image {
-    int width = 0;
-    int height = 0;
-    std::vector<RGBPixel> pixels;
-};
-
-Image openImage(std::string& fileName){
-    int width, height, channels;
-    uint8_t* imageData = stbi_load(fileName.c_str(), &width, &height, &channels, 3); // force RGB output
-    if(imageData == nullptr){
-        printf("Image loading failed.\n");
-        return {};
-    }
-    Image image = {
-        width,
-        height,
-        {},
-    };
-    image.pixels.reserve(width*height);
-    for (int y = 0; y < height; y++){
-        for (int x = 0; x < width; x++){
-            int index = (width * y + x) * 3;
-            RGBPixel pixel = {
-                imageData[index],
-                imageData[index + 1],
-                imageData[index + 2],
-            };
-            image.pixels.push_back(pixel);
-        }
-    }
-    stbi_image_free(imageData);
-    printf("Image loaded.\n");
-    return image;
-}
 
 void writeImage(std::string &fileName, Image &img){
     if(!stbi_write_bmp(fileName.c_str(), img.width, img.height, 3, img.pixels.data())){
@@ -132,7 +92,7 @@ void relaxPoints(std::vector<jcv_point>& points, std::vector<float>& darkness, i
 
         size_t N = points.size();
         std::vector<double> sumW (N, 0.0);
-        std::vector<double> sumWX (N, 0.0);   
+        std::vector<double> sumWX (N, 0.0);
         std::vector<double> sumWY (N, 0.0);
         
         const jcv_site *sites = jcv_diagram_get_sites(&diagram);
@@ -195,7 +155,7 @@ void drawCircle(Image &canvas, int cx, int cy, int radius, RGBPixel color){
 
 int darknessToRadius(float darkness, int minR, int maxR){
     darkness = std::clamp(darkness, 0.0f, 1.0f);
-    return minR + static_cast<int>(std::round(std::sqrt(darkness) * (maxR - minR))); /
+    return minR + static_cast<int>(std::round(std::sqrt(darkness) * (maxR - minR)));
 }
 
 Image renderStipples(std::vector<jcv_point> &points, std::vector<float> &densityMap, int width, int height){
@@ -216,11 +176,7 @@ Image renderStipples(std::vector<jcv_point> &points, std::vector<float> &density
 }
 
 int main(int argc, char *argv[])
-{   
-    printf("%d\n", argc);
-    for(int i=0; i<argc; i++){
-        printf("%s\n", argv[i]);
-    }
+{
     CLI::App app{"Weighted Voronoi Stippling by Marks Janis Maizitis as BUas programming homework (Y1Q0)"};
     std::string inputFN, outputFN;
     int iterations;
@@ -228,10 +184,16 @@ int main(int argc, char *argv[])
     app.add_option("--o, -o", outputFN, "Output file")->required();
     app.add_option("--iter, -iter", iterations, "Number of Lloyd relaxation iterations to perform")->required();
     CLI11_PARSE(app, argc, argv);
-    Image img = openImage(inputFN);
-    if (img.height == 0 || img.width == 0) {
-        return 1;
-    }
+
+    int W, H; uint8_t* imageData = stbi_load(inputFN.c_str(), &W, &H, nullptr, 3); // force RGB output
+    if(!imageData){printf("Image loading failed.\n");return 1;}
+
+    stbi_image_free(imageData);
+
+
+
+
+
     std::vector<float> densityMap = computeDarknessMap(img);
     std::vector<Positions> points = seedPoints(densityMap, img);
     std::vector<jcv_point> packedPoints = packPoints(points);
