@@ -51,10 +51,10 @@ int main(int argc, char *argv[]){
             if(sumW[idx] > 0.0){points[idx].x = (sumWX[idx] / sumW[idx]); points[idx].y = (sumWY[idx] / sumW[idx]);}
         }jcv_diagram_free(&diagram);
     }
-    std::vector<uint8_t> img(W*H*3, 255);
+    std::vector<uint8_t> img(W*H*3, 255); double maxR = 0.5 * std::sqrt(static_cast<double>(W) * H / points.size()); // dot diameter ~ point spacing sqrt(W*H/N)
     for(const jcv_point &p : points){int cx = static_cast<int>(std::round(p.x)); int cy = static_cast<int>(std::round(p.y));
         if(cx < 0 || cx >= W || cy < 0 || cy >= H) continue;
-        int r = 1 + static_cast<int>(std::round(std::sqrt(std::clamp(densityMap[cy * W + cx], 0.f, 1.f)) * 9));
+        int r = std::max(1, static_cast<int>(std::round(std::sqrt(std::clamp(densityMap[cy * W + cx], 0.f, 1.f)) * maxR)));
         for(int dy = -r; dy <= r; dy++) for(int dx = -r; dx <= r; dx++) if(dx*dx + dy*dy <= r*r){
                     int px = cx + dx, py = cy + dy;
                     if(px >= 0 && px < W && py >= 0 && py < H){ int o = ((py*W+px)*3); img[o] = img[o+1] = img[o+2] = 0;}
