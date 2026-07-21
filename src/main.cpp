@@ -39,8 +39,6 @@ Image openImage(std::string& fileName){
     image.pixels.reserve(width*height);
     for (int y = 0; y < height; y++){
         for (int x = 0; x < width; x++){
-            // *width scanlines of *height pixels
-            // first pixel - top left
             int index = (width * y + x) * 3;
             RGBPixel pixel = {
                 imageData[index],
@@ -142,21 +140,14 @@ void relaxPoints(std::vector<jcv_point>& points, std::vector<float>& darkness, i
             const jcv_site *site = &sites[i];
             jcv_point C = site->p; // get center point
             int idx = site->index; // get location which maps back into packedPoints array
-
             const jcv_graphedge *e = site->edges;
             while (e != nullptr){ // each edge
                 jcv_point A = e->pos[0];
                 jcv_point B = e->pos[1];
-
-                // discombobulate. (rasterise)
-
-                // Adapted from - https://stackoverflow.com/a/9070812, Posted by templatetypedef
-                // make bounding box from ABC
                 double minX = std::min({C.x, A.x, B.x});
                 double maxX = std::max({C.x, A.x, B.x});
                 double minY = std::min({C.y, A.y, B.y});
                 double maxY = std::max({C.y, A.y, B.y});
-                // this gives float values - normalise to whole image so we can iterate over pixels
                 int x0 = std::max(0, static_cast<int>(std::floor(minX)));
                 int x1 = std::min(width - 1, static_cast<int>(std::floor(maxX)));
                 int y0 = std::max(0, static_cast<int>(std::floor(minY)));
@@ -165,8 +156,6 @@ void relaxPoints(std::vector<jcv_point>& points, std::vector<float>& darkness, i
                 // iterate over computed BB
                 for(int y = y0; y <= y1; y++){
                     for(int x = x0; x <= x1; x++){
-                        // check if pixel is inside triangle
-                        // jvc_point is really just a {float, float}
                         double d0 = edge(A, B, {static_cast<jcv_real>(x), static_cast<jcv_real>(y)});
                         double d1 = edge(B, C, {static_cast<jcv_real>(x), static_cast<jcv_real>(y)});
                         double d2 = edge(C, A, {static_cast<jcv_real>(x), static_cast<jcv_real>(y)});
@@ -185,14 +174,12 @@ void relaxPoints(std::vector<jcv_point>& points, std::vector<float>& darkness, i
                 points[idx].x = (sumWX[idx] / sumW[idx]);
                 points[idx].y = (sumWY[idx] / sumW[idx]);
             }
-            
         }
         jcv_diagram_free(&diagram);
     }
 }
 
 void drawCircle(Image &canvas, int cx, int cy, int radius, RGBPixel color){
-    // adapted from https://www.mathsisfun.com/algebra/circle-equations.html
     for(int dy  = -radius; dy <= radius; dy++){
         for(int dx = -radius; dx <= radius; dx++){
             if(dx*dx + dy*dy <= radius*radius){
@@ -208,8 +195,7 @@ void drawCircle(Image &canvas, int cx, int cy, int radius, RGBPixel color){
 
 int darknessToRadius(float darkness, int minR, int maxR){
     darkness = std::clamp(darkness, 0.0f, 1.0f);
-    return minR + static_cast<int>(std::round(std::sqrt(darkness) * (maxR - minR))); // lerp
-    // darkness scales with r^2 (because circle), so sqrt(darkness)
+    return minR + static_cast<int>(std::round(std::sqrt(darkness) * (maxR - minR))); /
 }
 
 Image renderStipples(std::vector<jcv_point> &points, std::vector<float> &densityMap, int width, int height){
@@ -235,17 +221,13 @@ int main(int argc, char *argv[])
     for(int i=0; i<argc; i++){
         printf("%s\n", argv[i]);
     }
-
     CLI::App app{"Weighted Voronoi Stippling by Marks Janis Maizitis as BUas programming homework (Y1Q0)"};
     std::string inputFN, outputFN;
     int iterations;
     app.add_option("--i, -i", inputFN, "Input file")->required();
     app.add_option("--o, -o", outputFN, "Output file")->required();
     app.add_option("--iter, -iter", iterations, "Number of Lloyd relaxation iterations to perform")->required();
-    CLI11_PARSE(app, argc, argv);  
-
-
-    // open file, close file and save as different one
+    CLI11_PARSE(app, argc, argv);
     Image img = openImage(inputFN);
     if (img.height == 0 || img.width == 0) {
         return 1;
@@ -254,7 +236,6 @@ int main(int argc, char *argv[])
     std::vector<Positions> points = seedPoints(densityMap, img);
     std::vector<jcv_point> packedPoints = packPoints(points);
     relaxPoints(packedPoints, densityMap, img.width, img.height, iterations);
-
     Image stipples = renderStipples(packedPoints, densityMap, img.width, img.height);
     writeImage(outputFN, stipples);
 
