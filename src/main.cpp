@@ -233,11 +233,7 @@ Image renderStipples(std::vector<jcv_point> &points, std::vector<float> &density
 }
 
 int main(int argc, char *argv[])
-{   
-    printf("%d\n", argc);
-    for(int i=0; i<argc; i++){
-        printf("%s\n", argv[i]);
-    }
+{
 
     CLI::App app{"Weighted Voronoi Stippling by Marks Janis Maizitis as BUas programming homework (Y1Q0)"};
     std::string inputFN, outputFN;
