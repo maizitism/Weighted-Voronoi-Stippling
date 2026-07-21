@@ -251,7 +251,7 @@ int main(int argc, char *argv[])
     relaxPoints(packedPoints, densityMap, img.width, img.height, 40);
 
     Image stipples = renderStipples(packedPoints, densityMap, img.width, img.height);
-    writeImage("src/stipples.bmp", stipples);
+    writeImage(outputFN, stipples);
 
     return 0;
 }
