@@ -21,67 +21,7 @@ void writeImage(std::string &fileName, Image &img){
     printf("Image written.\n");
 }
 
-double edge(jcv_point a, jcv_point b, jcv_point c) {
-    return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
-}
-
-void relaxPoints(std::vector<jcv_point>& points, std::vector<float>& darkness, int width, int height, int iterations){
-    jcv_rect rect;
-    rect.min = {0.0f, 0.0f};
-    rect.max = {static_cast<jcv_real>(width - 1), static_cast<jcv_real>(height - 1)};
-    for(int iter = 0; iter < iterations; iter++){
-        printf("Performing Lloyd relaxation iteration %d...\n", iter);
-        jcv_diagram diagram{};
-        jcv_diagram_generate(static_cast<int>(points.size()), points.data(), &rect, nullptr, &diagram);
-
-        size_t N = points.size();
-        std::vector<double> sumW (N, 0.0);
-        std::vector<double> sumWX (N, 0.0);
-        std::vector<double> sumWY (N, 0.0);
-        
-        const jcv_site *sites = jcv_diagram_get_sites(&diagram);
-        for(int i = 0; i < diagram.numsites; i++){ // each cell
-            const jcv_site *site = &sites[i];
-            jcv_point C = site->p; // get center point
-            int idx = site->index; // get location which maps back into packedPoints array
-            const jcv_graphedge *e = site->edges;
-            while (e != nullptr){ // each edge
-                jcv_point A = e->pos[0];
-                jcv_point B = e->pos[1];
-                double minX = std::min({C.x, A.x, B.x});
-                double maxX = std::max({C.x, A.x, B.x});
-                double minY = std::min({C.y, A.y, B.y});
-                double maxY = std::max({C.y, A.y, B.y});
-                int x0 = std::max(0, static_cast<int>(std::floor(minX)));
-                int x1 = std::min(width - 1, static_cast<int>(std::floor(maxX)));
-                int y0 = std::max(0, static_cast<int>(std::floor(minY)));
-                int y1 = std::min(height - 1, static_cast<int>(std::floor(maxY)));
-                
-                // iterate over computed BB
-                for(int y = y0; y <= y1; y++){
-                    for(int x = x0; x <= x1; x++){
-                        double d0 = edge(A, B, {static_cast<jcv_real>(x), static_cast<jcv_real>(y)});
-                        double d1 = edge(B, C, {static_cast<jcv_real>(x), static_cast<jcv_real>(y)});
-                        double d2 = edge(C, A, {static_cast<jcv_real>(x), static_cast<jcv_real>(y)});
-                        bool inside = (d0 >= 0 && d1 >= 0 && d2 >= 0) || (d0 <= 0 && d1 <= 0 && d2 <= 0);
-                        if (inside){
-                            float w = darkness[y * width + x];
-                            sumW[idx] += w;
-                            sumWX[idx] += w * x;
-                            sumWY[idx] += w * y;
-                        }
-                    }
-                }
-                e = e->next;
-            }
-            if(sumW[idx] > 0.0){
-                points[idx].x = (sumWX[idx] / sumW[idx]);
-                points[idx].y = (sumWY[idx] / sumW[idx]);
-            }
-        }
-        jcv_diagram_free(&diagram);
-    }
-}
+double edge(jcv_point a, jcv_point b, jcv_point c) {return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);}
 
 void drawCircle(Image &canvas, int cx, int cy, int radius, RGBPixel color){
     for(int dy  = -radius; dy <= radius; dy++){
@@ -142,7 +82,25 @@ int main(int argc, char *argv[])
     std::vector<jcv_point> points(N);
     for (; N>0; N--){double x = distX(gen), y = distY(gen);  if (densityMap[W * y + x] > tDistrib(gen)) {points.push_back({x,y});}}
 
-    relaxPoints(packedPoints, densityMap, img.width, img.height, iterations);
+    jcv_rect rect {0.0f, 0.0f, static_cast<jcv_real>(W)-1, static_cast<jcv_real>(H)-1};
+    for(int it = 0; it < iterations; it++){
+        printf("Performing Lloyd relaxation iteration %d...\n", it); jcv_diagram diagram{}; jcv_diagram_generate(static_cast<int>(points.size()), points.data(), &rect, nullptr, &diagram);
+        std::vector<double> sumW (points.size(), 0.0), sumWX (points.size(), 0.0), sumWY (points.size(), 0.0);
+        const jcv_site *sites = jcv_diagram_get_sites(&diagram);
+        for(int i = 0; i < diagram.numsites; i++){ // each cell
+            const jcv_site *site = &sites[i]; jcv_point C = site->p; int idx = site->index;
+            for (const jcv_graphedge *e = site->edges; e; e = e->next) {
+                jcv_point A = e->pos[0], B = e->pos[1];
+                int x0 = std::max(0, static_cast<int>(std::floor(std::min({C.x, A.x, B.x})))), x1 = std::min(W - 1, static_cast<int>(std::floor(std::max({C.x, A.x, B.x}))));
+                int y0 = std::max(0, static_cast<int>(std::floor(std::min({C.y, A.y, B.y})))), y1 = std::min(H - 1, static_cast<int>(std::floor(std::max({C.y, A.y, B.y}))));
+            for (double y = y0; y <= y1; y++) for (double x = x0; x <= x1; x++) {
+                double d0 = edge(A, B, {(x),(y)}), d1 = edge(B, C, {(x), (y)}), d2 = edge(C, A, {(x), (y)});
+                if ((d0 >= 0 && d1 >= 0 && d2 >= 0) || (d0 <= 0 && d1 <= 0 && d2 <= 0)){ sumW[idx] += densityMap[y * W + x]; sumWX[idx] += densityMap[y * W + x] * x; sumWY[idx] += densityMap[y * W + x] * y; }
+            }
+            if(sumW[idx] > 0.0){points[idx].x = (sumWX[idx] / sumW[idx]); points[idx].y = (sumWY[idx] / sumW[idx]);}
+        }
+        jcv_diagram_free(&diagram);
+    }
     Image stipples = renderStipples(packedPoints, densityMap, img.width, img.height);
     writeImage(outputFN, stipples);
 
