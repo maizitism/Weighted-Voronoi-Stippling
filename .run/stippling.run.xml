@@ -1,0 +1,12 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="stippling" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="--i src/image.jpg --o stipples.bmp" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" WORKING_DIR="$PROJECT_DIR$" PASS_PARENT_ENVS_2="true" PROJECT_NAME="stippling" TARGET_NAME="stippling" CONFIG_NAME="default - release" RUN_TARGET_PROJECT_NAME="stippling" RUN_TARGET_NAME="stippling">
+    <method v="2">
+      <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+    </method>
+  </configuration>
+  <configuration default="false" name="stippling" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="--i src/me.jpg --o samples/stippled.bmp --iter 40 --n 5000" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" WORKING_DIR="file://$PROJECT_DIR$" PASS_PARENT_ENVS_2="true" PROJECT_NAME="stippling" TARGET_NAME="stippling" CONFIG_NAME="default - debug" RUN_TARGET_PROJECT_NAME="stippling" RUN_TARGET_NAME="stippling">
+    <method v="2">
+      <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+    </method>
+  </configuration>
+</component>
