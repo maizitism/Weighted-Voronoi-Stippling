@@ -6,7 +6,7 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 #define JC_VORONOI_IMPLEMENTATION
-#include "jc_voronoi.h"
+#include "jcv.h"
 #include "CLI11.hpp"
 #include <vector>
 #include <random>
@@ -120,7 +120,7 @@ std::vector<jcv_point> packPoints(std::vector<Positions> &positions){
     return points;
 }
 
-float edge(jcv_point a, jcv_point b, jcv_point c) {
+double edge(jcv_point a, jcv_point b, jcv_point c) {
     return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
 }
 
@@ -153,10 +153,10 @@ void relaxPoints(std::vector<jcv_point>& points, std::vector<float>& darkness, i
 
                 // Adapted from - https://stackoverflow.com/a/9070812, Posted by templatetypedef
                 // make bounding box from ABC
-                float minX = std::min({C.x, A.x, B.x});
-                float maxX = std::max({C.x, A.x, B.x});
-                float minY = std::min({C.y, A.y, B.y});
-                float maxY = std::max({C.y, A.y, B.y});
+                double minX = std::min({C.x, A.x, B.x});
+                double maxX = std::max({C.x, A.x, B.x});
+                double minY = std::min({C.y, A.y, B.y});
+                double maxY = std::max({C.y, A.y, B.y});
                 // this gives float values - normalise to whole image so we can iterate over pixels
                 int x0 = std::max(0, static_cast<int>(std::floor(minX)));
                 int x1 = std::min(width - 1, static_cast<int>(std::floor(maxX)));
@@ -168,9 +168,9 @@ void relaxPoints(std::vector<jcv_point>& points, std::vector<float>& darkness, i
                     for(int x = x0; x <= x1; x++){
                         // check if pixel is inside triangle
                         // jvc_point is really just a {float, float}
-                        float d0 = edge(A, B, {static_cast<float>(x), static_cast<float>(y)});
-                        float d1 = edge(B, C, {static_cast<float>(x), static_cast<float>(y)});
-                        float d2 = edge(C, A, {static_cast<float>(x), static_cast<float>(y)});
+                        double d0 = edge(A, B, {static_cast<jcv_real>(x), static_cast<jcv_real>(y)});
+                        double d1 = edge(B, C, {static_cast<jcv_real>(x), static_cast<jcv_real>(y)});
+                        double d2 = edge(C, A, {static_cast<jcv_real>(x), static_cast<jcv_real>(y)});
                         bool inside = (d0 >= 0 && d1 >= 0 && d2 >= 0) || (d0 <= 0 && d1 <= 0 && d2 <= 0);
                         if (inside){
                             float w = darkness[y * width + x];
