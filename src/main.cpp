@@ -12,15 +12,6 @@
 #include <algorithm>
 #include <cmath>
 
-
-void writeImage(std::string &fileName, Image &img){
-    if(!stbi_write_bmp(fileName.c_str(), img.width, img.height, 3, img.pixels.data())){
-        printf("Image failed to save.\n");
-        return;
-    }
-    printf("Image written.\n");
-}
-
 double edge(jcv_point a, jcv_point b, jcv_point c) {return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);}
 
 int main(int argc, char *argv[])
@@ -69,10 +60,9 @@ int main(int argc, char *argv[])
         int r = 1 + static_cast<int>(std::round(std::sqrt(std::clamp(densityMap[cx * W + cy], 0.f, 1.f)) * 9));
         for(int dy = -r; dy <= r; dy++) for(int dx = -r; dx <= r; dx++) if(dx*dx + dy*dy <= r*r){
                     int px = cx + dx, py = cy + dy;
-                    if(px >= 0 && px < W && py >= 0 && py < H){ int o = (py * W + px); img[o] = img[o+1] = img[o+2] = 0}
-                }
+                    if(px >= 0 && px < W && py >= 0 && py < H){ int o = (py * W + px); img[o] = img[o+1] = img[o+2] = 0;}
+        }
     }
-    writeImage(outputFN, stipples);
-
+    printf(stbi_write_bmp(outputFN.c_str(),W,H,3,img.data()) ? "Image written.\n" : "Image failed to save.\n");
     return 0;
-}x
+}
