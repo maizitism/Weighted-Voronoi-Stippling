@@ -14,8 +14,7 @@
 
 double edge(jcv_point a, jcv_point b, jcv_point c) {return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);}
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]){
     CLI::App app{"Weighted Voronoi Stippling by Marks Janis Maizitis as BUas programming homework (Y1Q0)"};
     std::string inputFN, outputFN;
     int iterations, N;
@@ -24,19 +23,16 @@ int main(int argc, char *argv[])
     app.add_option("--iter, -iter", iterations, "Number of Lloyd relaxation iterations to perform")->required();
     app.add_option("--n, -n", N, "Number of points to seed")->required();
     CLI11_PARSE(app, argc, argv);
-
     int W, H; uint8_t* imageData = stbi_load(inputFN.c_str(), &W, &H, nullptr, 3); // force RGB output
     if(!imageData){printf("Image loading failed.\n");return 1;}
     std::vector<float>densityMap(W*H);
     for (int i = 0; i< W*H; i++){ densityMap[i] = 1.f - (0.299f*imageData[i*3]+0.587f*imageData[i*3+1]+0.114f*imageData[i*3+2])/255.f; }
     stbi_image_free(imageData);
-
     std::mt19937 gen(std::random_device{}());
     std::uniform_int_distribution<int> distX(0, W - 1), distY(0, H - 1);
     std::uniform_real_distribution<float> tDistrib(0.0f, 1.0f);
     std::vector<jcv_point> points(N);
     for (; N>0; N--){double x = distX(gen), y = distY(gen);  if (densityMap[W * y + x] > tDistrib(gen)) {points.push_back({x,y});}}
-
     jcv_rect rect {0.0f, 0.0f, static_cast<jcv_real>(W)-1, static_cast<jcv_real>(H)-1};
     for(int it = 0; it < iterations; it++) {
         printf("Performing Lloyd relaxation iteration %d...\n", it); jcv_diagram diagram{}; jcv_diagram_generate(static_cast<int>(points.size()), points.data(), &rect, nullptr, &diagram);
