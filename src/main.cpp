@@ -95,7 +95,7 @@ std::vector<Positions> seedPoints(std::vector<float> &density, Image &img){
     while(N != 0){
         int x = distX(gen);
         int y = distY(gen);
-        int index = (img.width * y + x);
+        int index = img.width * y + x;
         float darkness = density[index];
         if (darkness > tDist(gen)){
             Positions pos = {
@@ -182,8 +182,8 @@ void relaxPoints(std::vector<jcv_point>& points, std::vector<float>& darkness, i
                 e = e->next;
             }
             if(sumW[idx] > 0.0){
-                points[idx].x = static_cast<jcv_real>(sumWX[idx] / sumW[idx]);
-                points[idx].y = static_cast<jcv_real>(sumWY[idx] / sumW[idx]);
+                points[idx].x = (sumWX[idx] / sumW[idx]);
+                points[idx].y = (sumWY[idx] / sumW[idx]);
             }
             
         }
