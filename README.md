@@ -8,20 +8,32 @@ background on the technique.
 - **Visual Studio** with the *Desktop development with C++* workload (provides
   the MSVC compiler).
 - **CMake 3.21+** (bundled with Visual Studio, or `winget install Kitware.CMake`).
+- **CLion** (recommended IDE), or any CMake-aware editor. A terminal + CMake
+  alone also works.
 
 That's it. The project pins no generator and uses no absolute paths, so CMake
 picks each machine's newest Visual Studio automatically and builds unchanged.
 
 ## Building
 
-### From VS Code (recommended)
+### From CLion (recommended)
 
-Install the recommended extensions when prompted (CMake Tools + C/C++). Then:
+CLion reads `CMakePresets.json` natively, so no extra setup is needed:
 
-- **Ctrl+Shift+B** builds (Debug).
-- **F5** builds and debugs.
-- *Terminal -> Run Task* also offers *CMake: build (Release)*, *Run (Debug)*,
-  *CMake: clean*.
+1. **File -> Open** the project folder. When prompted, let CLion enable the
+   **CMake presets** it finds (the `default` / MSVC preset).
+2. Make sure the CMake toolchain is **Visual Studio** (*Settings -> Build,
+   Execution, Deployment -> Toolchains*). This project uses MSVC-only flags
+   (`/W4 /EHsc`), so the bundled MinGW toolchain will not compile it.
+3. Switch between **Debug** and **Release** with the build-type selector next to
+   the run/build buttons.
+4. A shared **stippling** run configuration is committed in `.run/`. It passes
+   the required `--i` / `--o` arguments (`--i src/image.jpg --o stipples.bmp`)
+   and runs from the project root, so **Run**/**Debug** works out of the box.
+   Edit its *Program arguments* to point at a different image.
+
+> The program requires `--i <input>` and `--o <output>`; running with no
+> arguments exits immediately. That is why the run configuration above exists.
 
 ### From a terminal
 
@@ -44,7 +56,7 @@ src/               C++ sources (add your .cpp / .h files here)
 build/             Generated build tree (git-ignored)
 CMakeLists.txt     Project definition
 CMakePresets.json  Configure/build presets (Debug, Release)
-.vscode/           Shared VS Code build / debug / IntelliSense config
+.run/              Shared CLion run configuration (stippling, with args)
 documents/         Reference papers
 ```
 

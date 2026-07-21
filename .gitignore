@@ -18,6 +18,10 @@ CMakeUserPresets.json
 *.bmp
 *.jpg
 
-# VS Code: the shared project config in .vscode/ IS committed on purpose so the
-# build works the same on every machine. Only ignore per-user noise.
-.vscode/*.log
+# CLion / JetBrains: the shared IDE config lives in CMakePresets.json and the
+# committed .run/ run configurations. The .idea/ folder is per-user machine
+# state (it regenerates on open), so it is not committed.
+.idea/
+
+# CLion build trees for any non-preset CMake profiles.
+cmake-build-*/
