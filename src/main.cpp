@@ -82,8 +82,7 @@ struct Positions{
     int y;
 };
 
-std::vector<Positions> seedPoints(std::vector<float> &density, Image &img){
-    int N = 10000; // how many points to seed
+std::vector<Positions> seedPoints(std::vector<float> &density, Image &img, int N){
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_int_distribution<int> distX(0, img.width  - 1);
@@ -218,12 +217,16 @@ Image renderStipples(std::vector<jcv_point> &points, std::vector<float> &density
     canvas.height = height;
     canvas.pixels.assign(static_cast<size_t>(width * height), RGBPixel{255, 255, 255});
     printf("Rendering stippled image...\n");
+    // Derive the maximum dot radius from the average spacing between points, sqrt(W*H / N),
+    // so dot size scales with the image resolution and point count instead of a fixed pixel range.
+    double spacing = std::sqrt(static_cast<double>(width) * height / points.size());
+    int maxR = std::max(1, static_cast<int>(std::round(0.5 * spacing)));
     for(const jcv_point &p : points){
         int px = static_cast<int>(std::round(p.x));
         int py = static_cast<int>(std::round(p.y));
         if(px < 0 || px >= width || py < 0 || py >= height) continue;
         float d = densityMap[py * width + px];
-        int r = darknessToRadius(d, 1, 10);
+        int r = darknessToRadius(d, 1, maxR);
         drawCircle(canvas, px, py, r, RGBPixel{0, 0, 0});
     }
     return canvas;
@@ -238,11 +241,12 @@ int main(int argc, char *argv[])
 
     CLI::App app{"Weighted Voronoi Stippling by Marks Janis Maizitis as BUas programming homework (Y1Q0)"};
     std::string inputFN, outputFN;
-    int iterations;
-    app.add_option("--i, -i", inputFN, "Input file")->required();
-    app.add_option("--o, -o", outputFN, "Output file")->required();
-    app.add_option("--iter, -iter", iterations, "Number of Lloyd relaxation iterations to perform")->required();
-    CLI11_PARSE(app, argc, argv);  
+    int iterations, N;
+    app.add_option("--i", inputFN, "Input file")->required();
+    app.add_option("--o", outputFN, "Output file")->required();
+    app.add_option("--iter", iterations, "Number of Lloyd relaxation iterations to perform")->required();
+    app.add_option("--n", N, "Number of points to seed")->required();
+    CLI11_PARSE(app, argc, argv);
 
 
     // open file, close file and save as different one
@@ -251,7 +255,7 @@ int main(int argc, char *argv[])
         return 1;
     }
     std::vector<float> densityMap = computeDarknessMap(img);
-    std::vector<Positions> points = seedPoints(densityMap, img);
+    std::vector<Positions> points = seedPoints(densityMap, img, N);
     std::vector<jcv_point> packedPoints = packPoints(points);
     relaxPoints(packedPoints, densityMap, img.width, img.height, iterations);
 
