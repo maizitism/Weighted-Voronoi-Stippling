@@ -1,5 +1,4 @@
 #include <iostream>
-#include <cstdio>
 #include <string>
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -56,7 +55,7 @@ Image openImage(std::string& fileName){
     return image;
 }
 
-void writeImage(std::string fileName, Image &img){
+void writeImage(std::string &fileName, Image &img){
     if(!stbi_write_bmp(fileName.c_str(), img.width, img.height, 3, img.pixels.data())){
         printf("Image failed to save.\n");
         return;
@@ -97,7 +96,7 @@ std::vector<Positions> seedPoints(std::vector<float> &density, Image &img){
         int x = distX(gen);
         int y = distY(gen);
         int index = (img.width * y + x);
-        float darkness = density.data()[index];
+        float darkness = density[index];
         if (darkness > tDist(gen)){
             Positions pos = {
                 x, 
@@ -133,7 +132,7 @@ void relaxPoints(std::vector<jcv_point>& points, std::vector<float>& darkness, i
         jcv_diagram diagram{};
         jcv_diagram_generate(static_cast<int>(points.size()), points.data(), &rect, nullptr, &diagram);
 
-        int N = points.size();
+        size_t N = points.size();
         std::vector<double> sumW (N, 0.0);
         std::vector<double> sumWX (N, 0.0);   
         std::vector<double> sumWY (N, 0.0);
@@ -213,7 +212,7 @@ int darknessToRadius(float darkness, int minR, int maxR){
     // darkness scales with r^2 (because circle), so sqrt(darkness)
 }
 
-Image renderStipples(std::vector<jcv_point> &points, std::vector<float> densityMap, int width, int height){
+Image renderStipples(std::vector<jcv_point> &points, std::vector<float> &densityMap, int width, int height){
     Image canvas;
     canvas.width = width;
     canvas.height = height;
@@ -224,7 +223,7 @@ Image renderStipples(std::vector<jcv_point> &points, std::vector<float> densityM
         int py = static_cast<int>(std::round(p.y));
         if(px < 0 || px >= width || py < 0 || py >= height) continue;
         float d = densityMap[py * width + px];
-        int r = darknessToRadius(d, 1, 3);
+        int r = darknessToRadius(d, 1, 10);
         drawCircle(canvas, px, py, r, RGBPixel{0, 0, 0});
     }
     return canvas;
@@ -239,12 +238,15 @@ int main(int argc, char *argv[])
 
     CLI::App app{"Weighted Voronoi Stippling by Marks Janis Maizitis as BUas programming homework (Y1Q0)"};
     std::string inputFN, outputFN;
-    app.add_option("--i", inputFN, "Input file")->required();
-    app.add_option("--o", outputFN, "Output file")->required();
+    app.add_option("--i, -i", inputFN, "Input file")->required();
+    app.add_option("--o, -o", outputFN, "Output file")->required();
     CLI11_PARSE(app, argc, argv);  
 
     // open file, close file and save as different one
     Image img = openImage(inputFN);
+    if (img.height == 0) {
+        return 1;
+    }
     std::vector<float> densityMap = computeDarknessMap(img);
     std::vector<Positions> points = seedPoints(densityMap, img);
     std::vector<jcv_point> packedPoints = packPoints(points);
