@@ -25,3 +25,7 @@ CMakeUserPresets.json
 
 # CLion build trees for any non-preset CMake profiles.
 cmake-build-*/
+
+# Un-ignore sample images
+!/samples/testImage.jpeg
+!/samples/stippled.bmp
