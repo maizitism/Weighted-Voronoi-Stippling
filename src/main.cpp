@@ -13,15 +13,14 @@
 #include <cmath>
 
 double edge(jcv_point a, jcv_point b, jcv_point c) {return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);}
-
 int main(int argc, char *argv[]){
     CLI::App app{"Weighted Voronoi Stippling by Marks Janis Maizitis as BUas programming homework (Y1Q0)"};
     std::string inputFN, outputFN;
     int iterations, N;
-    app.add_option("--i, -i", inputFN, "Input file")->required();
-    app.add_option("--o, -o", outputFN, "Output file")->required();
-    app.add_option("--iter, -iter", iterations, "Number of Lloyd relaxation iterations to perform")->required();
-    app.add_option("--n, -n", N, "Number of points to seed")->required();
+    app.add_option("--i", inputFN, "Input file")->required();
+    app.add_option("--o", outputFN, "Output file")->required();
+    app.add_option("--iter", iterations, "Number of Lloyd relaxation iterations to perform")->required();
+    app.add_option("--n", N, "Number of points to seed")->required();
     CLI11_PARSE(app, argc, argv);
     int W, H; uint8_t* imageData = stbi_load(inputFN.c_str(), &W, &H, nullptr, 3); // force RGB output
     if(!imageData){printf("Image loading failed.\n");return 1;}
@@ -50,8 +49,7 @@ int main(int argc, char *argv[]){
                 }
             }
             if(sumW[idx] > 0.0){points[idx].x = (sumWX[idx] / sumW[idx]); points[idx].y = (sumWY[idx] / sumW[idx]);}
-        }
-        jcv_diagram_free(&diagram);
+        }jcv_diagram_free(&diagram);
     }
     std::vector<uint8_t> img(W*H*3, 255);
     for(const jcv_point &p : points){int cx = static_cast<int>(std::round(p.x)); int cy = static_cast<int>(std::round(p.y));
@@ -63,5 +61,4 @@ int main(int argc, char *argv[]){
         }
     }
     printf(stbi_write_bmp(outputFN.c_str(),W,H,3,img.data()) ? "Image written.\n" : "Image failed to save.\n");
-    return 0;
 }
