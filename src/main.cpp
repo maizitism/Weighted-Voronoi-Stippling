@@ -37,28 +37,6 @@ void drawCircle(Image &canvas, int cx, int cy, int radius, RGBPixel color){
     }
 }
 
-int darknessToRadius(float darkness, int minR, int maxR){
-    darkness = std::clamp(darkness, 0.0f, 1.0f);
-    return minR + static_cast<int>(std::round(std::sqrt(darkness) * (maxR - minR)));
-}
-
-Image renderStipples(std::vector<jcv_point> &points, std::vector<float> &densityMap, int width, int height){
-    Image canvas;
-    canvas.width = width;
-    canvas.height = height;
-    canvas.pixels.assign(static_cast<size_t>(width * height), RGBPixel{255, 255, 255});
-    printf("Rendering stippled image...\n");
-    for(const jcv_point &p : points){
-        int px = static_cast<int>(std::round(p.x));
-        int py = static_cast<int>(std::round(p.y));
-        if(px < 0 || px >= width || py < 0 || py >= height) continue;
-        float d = densityMap[py * width + px];
-        int r = darknessToRadius(d, 1, 10);
-        drawCircle(canvas, px, py, r, RGBPixel{0, 0, 0});
-    }
-    return canvas;
-}
-
 int main(int argc, char *argv[])
 {
     CLI::App app{"Weighted Voronoi Stippling by Marks Janis Maizitis as BUas programming homework (Y1Q0)"};
@@ -83,7 +61,7 @@ int main(int argc, char *argv[])
     for (; N>0; N--){double x = distX(gen), y = distY(gen);  if (densityMap[W * y + x] > tDistrib(gen)) {points.push_back({x,y});}}
 
     jcv_rect rect {0.0f, 0.0f, static_cast<jcv_real>(W)-1, static_cast<jcv_real>(H)-1};
-    for(int it = 0; it < iterations; it++){
+    for(int it = 0; it < iterations; it++) {
         printf("Performing Lloyd relaxation iteration %d...\n", it); jcv_diagram diagram{}; jcv_diagram_generate(static_cast<int>(points.size()), points.data(), &rect, nullptr, &diagram);
         std::vector<double> sumW (points.size(), 0.0), sumWX (points.size(), 0.0), sumWY (points.size(), 0.0);
         const jcv_site *sites = jcv_diagram_get_sites(&diagram);
@@ -93,15 +71,21 @@ int main(int argc, char *argv[])
                 jcv_point A = e->pos[0], B = e->pos[1];
                 int x0 = std::max(0, static_cast<int>(std::floor(std::min({C.x, A.x, B.x})))), x1 = std::min(W - 1, static_cast<int>(std::floor(std::max({C.x, A.x, B.x}))));
                 int y0 = std::max(0, static_cast<int>(std::floor(std::min({C.y, A.y, B.y})))), y1 = std::min(H - 1, static_cast<int>(std::floor(std::max({C.y, A.y, B.y}))));
-            for (double y = y0; y <= y1; y++) for (double x = x0; x <= x1; x++) {
-                double d0 = edge(A, B, {(x),(y)}), d1 = edge(B, C, {(x), (y)}), d2 = edge(C, A, {(x), (y)});
-                if ((d0 >= 0 && d1 >= 0 && d2 >= 0) || (d0 <= 0 && d1 <= 0 && d2 <= 0)){ sumW[idx] += densityMap[y * W + x]; sumWX[idx] += densityMap[y * W + x] * x; sumWY[idx] += densityMap[y * W + x] * y; }
-            }
-            if(sumW[idx] > 0.0){points[idx].x = (sumWX[idx] / sumW[idx]); points[idx].y = (sumWY[idx] / sumW[idx]);}
-        }
-        jcv_diagram_free(&diagram);
+                for (double y = y0; y <= y1; y++) for (double x = x0; x <= x1; x++) {
+                    double d0 = edge(A, B, {(x),(y)}), d1 = edge(B, C, {(x), (y)}), d2 = edge(C, A, {(x), (y)});
+                    if ((d0 >= 0 && d1 >= 0 && d2 >= 0) || (d0 <= 0 && d1 <= 0 && d2 <= 0)){ sumW[idx] += densityMap[y * W + x]; sumWX[idx] += densityMap[y * W + x] * x; sumWY[idx] += densityMap[y * W + x] * y; }
+                }
+                if(sumW[idx] > 0.0){points[idx].x = (sumWX[idx] / sumW[idx]); points[idx].y = (sumWY[idx] / sumW[idx]);} } jcv_diagram_free(&diagram); }
     }
-    Image stipples = renderStipples(packedPoints, densityMap, img.width, img.height);
+    std::vector<uint8_t> img(W*H*3, 255);
+    for(const jcv_point &p : points){int px = static_cast<int>(std::round(p.x)); int py = static_cast<int>(std::round(p.y));
+        if(px < 0 || px >= W || py < 0 || py >= H) continue;
+        int r = 1 + static_cast<int>(std::round(std::sqrt(std::clamp(densityMap[px * W + py], 0.f, 1.f)) * 9));
+
+        drawCircle(canvas, px, py, r, RGBPixel{0, 0, 0});
+    }
+    return canvas;
+
     writeImage(outputFN, stipples);
 
     return 0;
