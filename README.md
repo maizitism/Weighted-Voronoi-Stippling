@@ -57,10 +57,10 @@ and each iteration the centroid moves closer to the darkest spot. This step help
 the initial random clumping, while still keeping points concentrated in the darker areas.
 5. **Rendering.** Every final point is drawn as a filled black circle on a white canvas,
 with the circle's radius proportional to the square root of `darkness`, so that a dot's
-area scales linearly with darkness. The *maximum* radius is not a fixed pixel value; it is
-derived from the average spacing between points, `√(W·H / N)`, so the dots automatically
-scale with the image resolution and the point count `--n` instead of needing to be
-hand-tuned per image.
+area scales linearly with darkness. For specific combinations of N and circle sizes, detail
+could be obstructed by overly large circles on a small canvas or lost by placing ones too small. Therefore, the
+maximum radius is not a fixed value. It is derived from the average spacing between points,
+so they scale with canvas size and point count.
 
 ## Prerequisites
 
@@ -104,7 +104,7 @@ build\[Chosen Preset]\stippling.exe --i [...] --o [... .bmp] --iter [x]  --n [y]
 
 ## Sample output
 
-Produced with `--iter 40`. Note how the higher `--n` yields more, and correspondingly smaller, dots:
+Produced with `--iter 40`. Obseve how a higher value of `--n` gives more smaller points, as described in How It Works:
 
 |                   Input                    |                 Stippled (`--n 5000`)                  |                  Stippled (`--n 10000`)                  |
 |:------------------------------------------:|:------------------------------------------------------:|:--------------------------------------------------------:|
@@ -113,11 +113,13 @@ Produced with `--iter 40`. Note how the higher `--n` yields more, and correspond
 
 ### Effect of Lloyd relaxation
 
-The same image at a fixed `--n 10000`, varying only `--iter`. The raw seeding is clumpy;
-each relaxation pass spreads the points more evenly while preserving the overall density.
-Note that the initial points are sampled randomly (`std::random_device`), so every run —
-including the `--iter 0` frame — starts from a different layout; these are three independent
-runs, not one evolving set of points:
+The same sample image at a fixed `--n 10000`, with a changing `--iter`. As described, the
+raw seeding is clumpy and loses detail in the image. Each relaxation pass spreads the points
+more evenly while preserving the overall density in the area.
+
+It is worthwhile to mention that the initial points are sampled using `std::random_device`,
+so no initial layout of the dots is repeatable. These three runs are independent, therefore vary
+slightly in their final layout of points.
 
 |                 `--iter 0` (raw seeding)                  |                       `--iter 5`                       |                       `--iter 40`                        |
 |:---------------------------------------------------------:|:------------------------------------------------------:|:--------------------------------------------------------:|
@@ -128,4 +130,5 @@ runs, not one evolving set of points:
 
 During this project the Claude Opus 4.8 model by Anthropic was used for some tasks.
 All commits containing AI generated code or AI suggested bug fixes have been properly co-authored
-and audited beforehand for correctness.
+and audited beforehand for correctness. Claude was also used to work with Git, as I am not as
+comfortable as I would want to be.
